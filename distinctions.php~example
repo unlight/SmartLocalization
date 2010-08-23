@@ -1,0 +1,7 @@
+<?php if (!defined('APPLICATION')) exit();
+
+$Definition['DashboardRoleEdit']['Delete'] =  'Can Delete?';
+$Definition['DashboardRoleEdit']['Add'] =  'Adding';
+$Definition['VanillaDiscussionsIndex']['Discussions'] =  'Forum';
+$Definition['DashboardProfile']['Comment'] = 'Comment on my wall';
+
