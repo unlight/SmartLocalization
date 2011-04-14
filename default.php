@@ -3,49 +3,17 @@
 $PluginInfo['SmartLocalization'] = array(
 	'Name' => 'Smart Localization',
 	'Description' => 'Allows overwrite translation code depending on the application (controller/method).',
-	'Version' => '2.3.8',
+	'Version' => '2.4.9',
 	'Author' => 'Flak Monkey',
-	'Date' => '28 Feb 2011',
+	'Date' => '14 Apr 2011',
 	'RequiredApplications' => array('Dashboard' => '>=2.0.17')
 );
 
-/**
-ABOUT
-=====
-Help to achieve good localization.
-
-The problem: We cannot achieve good localization because same translation codes are used on different
-pages. For example, T('Edit') on discussion index and while editing role permissions in dashboard.
-
-CHANGELOG
-=========
-1.0 / 2 Apr 2010
-[new] first release
-1.1 / 5 Apr 2010
-[alt] removed plugin "Plugin Utils" dependency
-[alt] changed identifier names to camel-case style
-[add] custom definitions for current locale (locale.php - global)
-2.0 / 19 Jun 2010
-[alt] all custom definitions now stored near locale files
-	/applications/application-folder/locale/locale-name-folder/distinctions.php 
-	or /plugins/plugin-folder/locale/locale-name-folder/distinctions.php
-2.1 / 22 Jul 2010
-[alt] Gdn_FileCache removed. Gdn_FileCache => Gdn_LibraryMap
-2.2 / 2 Aug 2010
-[fix] typo
-2.3 / 2 Jan 2011
-
-## TODO
-
-distinctions.php => custom.php
-4. GUI for custom translations
-
-Fix BUG:
-http://vanillaforums.org/discussion/14152/smart-localization-comments#Item_2
-this makes it possible to store the distinctions.php file into the locale folder as
-./locale/whatever/distinctions.php
-
-*/
+# ABOUT
+# =====
+# Help to achieve good localization.
+# The problem: We cannot achieve good localization because same translation codes are used on different
+# pages. For example, T('Edit') on discussion index and while editing role permissions in dashboard.
 
 class SmartLocalizationPlugin implements Gdn_IPlugin {
 	
@@ -54,7 +22,7 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 	
 	public function __construct() {
 		$this->_Locale = Gdn::Locale();
-		$this->LoadLocaleDistinctions();
+		$this->Load();
 	}
 	
 	public function Gdn_Dispatcher_BeforeControllerMethod_Handler($Sender) {
@@ -63,79 +31,108 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 	}
 	
 	protected function SetTranslation($Sender) {
-	//public function Base_Render_Before(&$Sender) {
-
-		// get sender info
+		// Get sender info
 		$Application = mb_convert_case($Sender->Application, 2);
 		$Controller = mb_convert_case(substr($Sender->ControllerName, 0, -10), 2);
 		$Method = mb_convert_case($Sender->RequestMethod, 2);
 		//d($Application.$Controller.$Method, $this->_Definition);
 		
-		// searching custom definitions for this application and this controller
+		// Search custom definitions for this application and this controller
 		$Codes = array();
-		if (array_key_exists($Application, $this->_Definition)) {
+		if (array_key_exists($Application, $this->_Definition))
 			$Codes = array_merge($Codes, (array)$this->_Definition[$Application]);
-		}
-		
-		if (array_key_exists($Application.$Controller, $this->_Definition)) {
+		if (array_key_exists($Application.$Controller, $this->_Definition))
 			$Codes = array_merge($Codes, (array)$this->_Definition[$Application.$Controller]);
-		}
-
-		if (array_key_exists($Application.$Controller.$Method, $this->_Definition)) {
+		if (array_key_exists($Application.$Controller.$Method, $this->_Definition))
 			$Codes = array_merge($Codes, (array)$this->_Definition[$Application.$Controller.$Method]);
-		}
 		
 		// set translation
 		$this->_Locale->SetTranslation($Codes);
 	}
 	
-	protected function LoadLocaleDistinctions($ForceRemapping = False) {
-		$SafeLocaleName = preg_replace('/([^\w\d_-])/', '', $this->_Locale->Current());
-		$EnabledApplications = Gdn::Config('EnabledApplications', array());
+	protected function Load($ForceRemapping = False) {
+		$LocaleName = $this->_Locale->Current();
+		$ApplicationWhiteList = $EnabledApplications = Gdn::Config('EnabledApplications', array());
 		$EnabledPlugins = Gdn::Config('EnabledPlugins', array());
-
-		Gdn_LibraryMap::PrepareCache('distinctions', NULL, 'tree');
+		// TODO: REPLACE $PluginWhiteList => $EnabledPlugins
+		// TODO: REPLACE $ApplicationWhiteList => $EnabledApplications
+		$SafeLocaleName = preg_replace('/([^\w\d_-])/', '', $LocaleName);
+		$LocaleSources = array();
 		
-		$Sources = Gdn_LibraryMap::GetCache('distinctions', $SafeLocaleName);
-		if ($ForceRemapping === True || !Gdn_LibraryMap::CacheReady('distinctions') || $Sources === Null) {
-			$Sources = array();
-			$ApplicationSources = Gdn_FileSystem::FindAll(PATH_APPLICATIONS, CombinePaths(array('locale', $SafeLocaleName, 'distinctions.php')), $EnabledApplications);
-			if ($ApplicationSources != False) $Sources = array_merge($Sources, $ApplicationSources);
-			$PluginSources = Gdn_FileSystem::FindAll(PATH_PLUGINS, CombinePaths(array('locale', $SafeLocaleName, 'distinctions.php')), $EnabledPlugins);
-			if ($PluginSources != False) $Sources = array_merge($Sources, $PluginSources);
+		if (!is_array($EnabledApplications)) $EnabledApplications = array();
+		if (!is_array($EnabledPlugins)) $EnabledPlugins = array();
+		
+		Gdn_LibraryMap::PrepareCache('distinct', NULL, 'tree');
+		$LocaleSources = Gdn_LibraryMap::GetCache('distinct', $SafeLocaleName);
+		if ($ForceRemapping === TRUE || !Gdn_LibraryMap::CacheReady('distinct') || $LocaleSources === NULL) {
+			$LocaleSources = array();
+			// Get application-based locale special definition files
+			// 2.0.11 (TODO: REMOVE)
+			$ApplicationLocaleSources = Gdn_FileSystem::FindAll(PATH_APPLICATIONS, CombinePaths(array('locale', $LocaleName, 'distinctions.php')), $EnabledApplications);
+			if ($ApplicationLocaleSources !== FALSE) $LocaleSources = array_merge($LocaleSources, $ApplicationLocaleSources);
+			// 2.0.11+
+			$ApplicationLocaleSources = Gdn_FileSystem::FindAll(PATH_APPLICATIONS, CombinePaths(array('locale', $LocaleName.'.distinct.php')), $EnabledApplications);
+			if ($ApplicationLocaleSources !== FALSE) $LocaleSources = array_merge($LocaleSources, $ApplicationLocaleSources);
+
+			// Get plugin-based locale special definition files
+			// 2.0.11 (TODO: REMOVE)
+			$PluginLocaleSources = Gdn_FileSystem::FindAll(PATH_PLUGINS, CombinePaths(array('locale', $LocaleName, 'distinctions.php')), $EnabledPlugins);
+			if ($PluginLocaleSources !== FALSE) $LocaleSources = array_merge($LocaleSources, $PluginLocaleSources);
+			// 2.0.11+
+			$PluginLocaleSources = Gdn_FileSystem::FindAll(PATH_PLUGINS, CombinePaths(array('locale', $LocaleName.'.distinct.php')), $EnabledPlugins);
+			if ($PluginLocaleSources !== FALSE) $LocaleSources = array_merge($LocaleSources, $PluginLocaleSources);
+			
+			// Get theme-based locale special definition files.
 			$Theme = C('Garden.Theme');
-			if ($Theme != False) {
-				$ThemeLocalePath = ConcatSep(DS, PATH_THEMES, $Theme, 'distinctions', $SafeLocaleName.'.php');
-				if (file_exists($ThemeLocalePath)) $Sources[] = $ThemeLocalePath;
+			if ($Theme) {
+				$ThemeLocalePath = PATH_THEMES."/$Theme/locale/$LocaleName.distinct.php";
+				if (file_exists($ThemeLocalePath)) $LocaleSources[] = $ThemeLocalePath;
 			}
+
+			// Get locale-based locale special definition files.
+			$EnabledLocales = C('EnabledLocales');
+			if (is_array($EnabledLocales)) {
+				foreach ($EnabledLocales as $Key => $Locale) {
+					if ($Locale != $LocaleName) continue; // skip locales that aren't in effect.
+					// Grab all of the files in the locale's folder.
+					$Paths = SafeGlob(PATH_ROOT."/locales/$Key/*.distinct.php");
+					if (is_array($Paths)) foreach($Paths as $Path) $LocaleSources[] = $Path;
+				}
+			}
+			
 			// Save the mappings
 			$FileContents = array();
-			for ($Count = count($Sources), $i = 0; $i < $Count; ++$i) {
-				$FileContents[$SafeLocaleName][] = Gdn_Format::ArrayValueForPhp($Sources[$i]);
+			for($Count = count($LocaleSources), $i = 0; $i < $Count; ++$i) {
+				$FileContents[$SafeLocaleName][] = Gdn_Format::ArrayValueForPhp($LocaleSources[$i]);
 			}
-			Gdn_LibraryMap::PrepareCache('distinctions', $FileContents);
 			
-			$Sources = Gdn_LibraryMap::GetCache('distinctions', $SafeLocaleName);
-		}
-	
-		for($Count = count($Sources), $i = 0; $i < $Count; ++$i) {
-			if (file_exists($Sources[$i])) include_once($Sources[$i]);
-		}
+			// Look for a global
+			$ConfigLocale = PATH_LOCAL_CONF.'/distinct.php';
+			if (file_exists($ConfigLocale)) $FileContents[$SafeLocaleName][] = $ConfigLocale;
 		
-		// TODO: conf?
-		//$ConfigDistinction = PATH_CONF . DS . 'distinctions.php';
-		//if(file_exists($ConfigDistinction)) include $ConfigDistinction;
-		$PluginDistinction = dirname(__FILE__) . DS . 'distinctions.php';
-		if (file_exists($PluginDistinction)) include $PluginDistinction;
-		
-		if (isset($Definition) && is_array($Definition)) $this->_Definition = $Definition;
-		unset($Definition);
+			Gdn_LibraryMap::PrepareCache('distinct', $FileContents);
+		}
+
+		// Set up defaults
+		$Definition = array();
+		$this->_Definition =& $Definition;
+
+		// Import all of the sources.
+		$LocaleSources = Gdn_LibraryMap::GetCache('distinct', $SafeLocaleName);
+		if (is_null($SafeLocaleName)) $LocaleSources = array();
+
+		for($Count = count($LocaleSources), $i = 0; $i < $Count; ++$i) {
+			if (file_exists($LocaleSources[$i])) include($LocaleSources[$i]);
+		}
+
+		$ConfLocaleOverride = PATH_LOCAL_CONF . "/locale-$LocaleName.distinct.php";
+		if (file_exists($ConfLocaleOverride)) include($ConfLocaleOverride);
 	}
 	
 	public function Setup() {
+		if (!function_exists('mb_convert_case')) 
+			throw new Exception('mbstring extension (Multibyte String Functions) is required.');
 	}
-	
-	
 	
 	
 }
