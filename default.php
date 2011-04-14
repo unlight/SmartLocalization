@@ -3,7 +3,7 @@
 $PluginInfo['SmartLocalization'] = array(
 	'Name' => 'Smart Localization',
 	'Description' => 'Allows overwrite translation code depending on the application (controller/method).',
-	'Version' => '2.4.9',
+	'Version' => '2.4.10',
 	'Author' => 'Flak Monkey',
 	'Date' => '14 Apr 2011',
 	'RequiredApplications' => array('Dashboard' => '>=2.0.17')
@@ -11,7 +11,7 @@ $PluginInfo['SmartLocalization'] = array(
 
 # ABOUT
 # =====
-# Help to achieve good localization.
+# Helps to achieve good localization.
 # The problem: We cannot achieve good localization because same translation codes are used on different
 # pages. For example, T('Edit') on discussion index and while editing role permissions in dashboard.
 
