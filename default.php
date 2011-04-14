@@ -3,9 +3,9 @@
 $PluginInfo['SmartLocalization'] = array(
 	'Name' => 'Smart Localization',
 	'Description' => 'Allows overwrite translation code depending on the application (controller/method).',
-	'Version' => '2.3.7',
+	'Version' => '2.3.8',
 	'Author' => 'Flak Monkey',
-	'Date' => '2 Jan 2010',
+	'Date' => '28 Feb 2011',
 	'RequiredApplications' => array('Dashboard' => '>=2.0.17')
 );
 
@@ -35,9 +35,15 @@ CHANGELOG
 [fix] typo
 2.3 / 2 Jan 2011
 
-TODO
+## TODO
+
 distinctions.php => custom.php
 4. GUI for custom translations
+
+Fix BUG:
+http://vanillaforums.org/discussion/14152/smart-localization-comments#Item_2
+this makes it possible to store the distinctions.php file into the locale folder as
+./locale/whatever/distinctions.php
 
 */
 
@@ -53,7 +59,7 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 	
 	public function Gdn_Dispatcher_BeforeControllerMethod_Handler($Sender) {
 		$Controller =& $Sender->EventArguments['Controller'];
-		if ($Controller) $this->SetTranslation($Controller);
+		$this->SetTranslation($Controller);
 	}
 	
 	protected function SetTranslation($Sender) {
@@ -68,15 +74,15 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 		// searching custom definitions for this application and this controller
 		$Codes = array();
 		if (array_key_exists($Application, $this->_Definition)) {
-			$Codes = array_merge($Codes, $this->_Definition[$Application]);
+			$Codes = array_merge($Codes, (array)$this->_Definition[$Application]);
 		}
 		
 		if (array_key_exists($Application.$Controller, $this->_Definition)) {
-			$Codes = array_merge($Codes, $this->_Definition[$Application.$Controller]);
+			$Codes = array_merge($Codes, (array)$this->_Definition[$Application.$Controller]);
 		}
-		
+
 		if (array_key_exists($Application.$Controller.$Method, $this->_Definition)) {
-			$Codes = array_merge($Codes, $this->_Definition[$Application.$Controller.$Method]);
+			$Codes = array_merge($Codes, (array)$this->_Definition[$Application.$Controller.$Method]);
 		}
 		
 		// set translation
