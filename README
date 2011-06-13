@@ -1,0 +1,14 @@
+ABOUT
+=====
+Helps to achieve good localization.
+The problem: We cannot achieve good localization because same translation codes are used on different
+pages. For example, T('Edit') at discussions index and while editing role permissions in dashboard.
+
+CHANGELOG
+=========
+2.5 (13 Jun 2011)
+- own caching system
+
+TODO
+====
+- use Garden's caching system
