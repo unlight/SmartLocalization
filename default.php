@@ -3,7 +3,7 @@
 $PluginInfo['SmartLocalization'] = array(
 	'Name' => 'Smart Localization',
 	'Description' => 'Allows overwrite translation code depending on the application (controller/method).',
-	'Version' => '2.5',
+	'Version' => '2.5.1',
 	'Author' => 'Flak Monkey',
 	'AuthorUrl' => 'http://vanillaforums.org/profile/addons/8576/8576',
 	'Date' => 'Summer 2011',
@@ -56,13 +56,13 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 		// 2.0.0+ (TODO: REMOVE)
 		$ApplicationLocaleSources = Gdn_FileSystem::FindAll(PATH_APPLICATIONS, CombinePaths(array('locale', $LocaleName, 'distinctions.php')), $EnabledApplications);
 		if ($ApplicationLocaleSources !== False) {
-			Deprecated("Move all application's locale distinctions.php files to [applicationname]/locale/[localename].custom.php, distinctions.php filenames");
+			if (C('Debug')) Deprecated("Move all application's locale distinctions.php files to [applicationname]/locale/[localename].custom.php, distinctions.php filenames");
 			$LocaleSources = array_merge($LocaleSources, $ApplicationLocaleSources);
 		}
 		// 2.0.11+ (TODO: REMOVE)
 		$ApplicationLocaleSources = Gdn_FileSystem::FindAll(PATH_APPLICATIONS, CombinePaths(array('locale', $LocaleName.'.distinct.php')), $EnabledApplications);
 		if ($ApplicationLocaleSources !== False) {
-			Deprecated("Rename all application's locale [localename].distinct.php files to [localename].custom.php, [localename].distinct.php filenames");
+			if (C('Debug')) Deprecated("Rename all application's locale [localename].distinct.php files to [localename].custom.php, [localename].distinct.php filenames");
 			$LocaleSources = array_merge($LocaleSources, $ApplicationLocaleSources);
 		}
 		
@@ -74,13 +74,13 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 		// 2.0.0+ (TODO: REMOVE)
 		$PluginLocaleSources = Gdn_FileSystem::FindAll(PATH_PLUGINS, CombinePaths(array('locale', $LocaleName, 'distinctions.php')), $EnabledPlugins);
 		if ($PluginLocaleSources !== False) {
-			Deprecated("Move all plugin's locale distinctions.php files to [pluginname]/locale/[localename].custom.php, distinctions.php filenames");
+			if (C('Debug')) Deprecated("Move all plugin's locale distinctions.php files to [pluginname]/locale/[localename].custom.php, distinctions.php filenames");
 			$LocaleSources = array_merge($LocaleSources, $PluginLocaleSources);
 		}
 		// 2.0.11+ (TODO: REMOVE)
 		$PluginLocaleSources = Gdn_FileSystem::FindAll(PATH_PLUGINS, CombinePaths(array('locale', $LocaleName.'.distinct.php')), $EnabledPlugins);
 		if ($PluginLocaleSources !== False) {
-			Deprecated("Rename all plugin's locale [localename].distinct.php files to [localename].custom.php, [localename].distinct.php filenames");
+			if (C('Debug')) Deprecated("Rename all plugin's locale [localename].distinct.php files to [localename].custom.php, [localename].distinct.php filenames");
 			$LocaleSources = array_merge($LocaleSources, $PluginLocaleSources);
 		}
 		
@@ -95,7 +95,7 @@ class SmartLocalizationPlugin implements Gdn_IPlugin {
 			$ThemeLocalePath = PATH_THEMES."/$Theme/locale/$LocaleName.distinct.php";
 			if (file_exists($ThemeLocalePath)) {
 				$LocaleSources[] = $ThemeLocalePath;
-				Deprecated("Rename file to $LocaleName.custom.php, $LocaleName.distinct.php filename");
+				if (C('Debug')) Deprecated("Rename file to $LocaleName.custom.php, $LocaleName.distinct.php filename");
 			}
 			// 2.0.18+ 
 			$ThemeLocalePath = PATH_THEMES."/$Theme/locale/$LocaleName.distinct.php";
